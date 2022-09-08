@@ -1,14 +1,49 @@
 import numpy as np
-from flask import Flask, render_template,request
-
-# from joblib import load
-
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from flask import Flask, render_template , request
+from joblib import load
+import os
 app = Flask(__name__)
 @app.route("/",methods=['GET','POST'])
 def hello_world():
     request_type_str=request.method
     if request_type_str == 'GET':
-        return render_template("index.html")
-    # else:
-    #     text=request.form["text"]
-    #     return text.upper()
+      
+        return  render_template("index.html", href='static/base_pic.svg')
+        
+    else:
+        text= request.form['text']
+        path= "static/prediction_pic.jpg"
+        model_loaded=load("model.joblib")
+        np_array=floats_string_to_np_arr(text)
+        make_picture("AgesAndHeights.pkl",model_loaded,np_array, path)
+        return render_template("index.html", href=path)
+   
+
+def make_picture(training_data_filename,model,new_inp_np_arr,output_file):
+  data=pd.read_pickle(training_data_filename)
+  data=data[data["Age"]>0]
+  data=data[data["Height"]>0]
+  ages=data["Age"]
+  heights=data["Height"]
+  x_new=np.array(list(range(1,19))).reshape(18,1)
+  preds=model.predict(x_new)
+  fig= px.scatter(x=ages, y=heights, title="Height vs Age of People",labels={"x":"Age(years)", "y":"Height(inches)"})
+  fig.add_trace(go.Scatter(x=x_new.reshape(18),y=preds, mode="lines",name="model"))
+  new_preds=model.predict(new_inp_np_arr)
+  fig.add_trace(go.Scatter(x=new_inp_np_arr.reshape(len(new_inp_np_arr)),y=new_preds, name="New Output",mode="markers",marker=dict(color="purple",size=20,line=dict(color="purple",width=2))))
+  fig.write_image(output_file,width=800, engine="kaleido")
+  fig.show()
+  
+  
+def floats_string_to_np_arr(floats_str):
+    def is_float(s):
+        try:
+            float(s)
+            return True
+        except:
+            return False
+    floats=np.array([float(x) for x in floats_str.split(",") if is_float(x)] )
+    return floats.reshape(len(floats),1)
