@@ -16,11 +16,11 @@ def hello_world():
         
     else:
         text= request.form['text']
-        random_string=uuid.uuid4.hex
-        path= "app/static/"+random_string+".svg"
-        model_loaded=load("app/model.joblib")
+        random_string=uuid.uuid4().hex
+        path= "static/"+random_string+".svg"
+        model_loaded=load("model.joblib")
         np_array=floats_string_to_np_arr(text)
-        make_picture("app/AgesAndHeights.pkl",model_loaded,np_array, path)
+        make_picture("AgesAndHeights.pkl",model_loaded,np_array, path)
         return render_template("index.html", href=path[4:])
    
 
